@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onitama - Mesa de Jogo</title>
+    
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1e272e; /* Fundo escuro e elegante */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 40px; /* Espaço entre as colunas */
+            padding: 20px;
+        }
+
+        /* Colunas laterais para as cartas */
+        .card-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Espaço entre as duas cartas na mesma coluna */
+        }
+
+        .card {
+            width: 220px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            border: 2px solid #34495e;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.05); /* Pequeno efeito de zoom ao passar o rato */
+            cursor: pointer;
+        }
+
+        #board {
+            background-image: url('Tabuleiro_Onitama.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 5px solid #000;
+            width: 500px;
+            height: 500px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            border-radius: 8px; /* Arredondar ligeiramente os cantos do tabuleiro */
+            overflow: hidden;
+        }
+
+        .cell {
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .piece {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            user-select: none; /* Evita selecionar o texto (emoji) ao clicar */
+        }
+
+        /* Cores das equipas usando gradientes para efeito 3D */
+        .blue {
+            background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
+            border: 2px solid #1a5276;
+        }
+
+        .red {
+            background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+            border: 2px solid #7b241c;
+        }
+
+        /* Destaque especial para o Mestre */
+        .master {
+            border: 4px solid #f1c40f; /* Borda dourada grossa */
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <!-- Coluna da Esquerda (Cartas) -->
+        <div class="card-column" id="left-cards">
+            <img src="sapo.jpg" alt="Carta Sapo" class="card">
+            <img src="serpente.jpg" alt="Carta Serpente do Mar" class="card">
+        </div>
+
+        <!-- Coluna Central (Tabuleiro) -->
+        <div id="board-container">
+            <div id="board"></div>
+        </div>
+
+        <!-- Coluna da Direita (Cartas) -->
+        <div class="card-column" id="right-cards">
+            <img src="dragao.jpg" alt="Carta Dragão" class="card">
+            <img src="Carta_Inversa_Onitama.jpg" alt="Verso da Carta" class="card">
+        </div>
+
+    </div>
+
+    <script>
+        const boardElement = document.getElementById('board');
+
+        // Loop para criar as 5 linhas e 5 colunas (25 células)
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                
+                // Cria a célula do tabuleiro
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+
+                let piece = null;
+
+                // Peças Azuis (Linha Superior - Jogador de Cima)
+                if (row === 0) {
+                    piece = document.createElement('div');
+                    piece.classList.add('piece', 'blue');
+                    
+                    if (col === 2) {
+                        piece.classList.add('master');
+                        piece.innerHTML = '👑'; // Coroa para o mestre
+                    } else {
+                        piece.innerHTML = '♟️'; // Peão para os alunos
+                    }
+                }
+                
+                // Peças Vermelhas (Linha Inferior - Jogador de Baixo)
+                else if (row === 4) {
+                    piece = document.createElement('div');
+                    piece.classList.add('piece', 'red');
+                    
+                    if (col === 2) {
+                        piece.classList.add('master');
+                        piece.innerHTML = '👑'; // Coroa para o mestre
+                    } else {
+                        piece.innerHTML = '♟️'; // Peão para os alunos
+                    }
+                }
+
+                // Se criámos uma peça para esta célula, adicionamo-la dentro da célula
+                if (piece) {
+                    cell.appendChild(piece);
+                }
+
+                // Finalmente, adicionamos a célula ao tabuleiro
+                boardElement.appendChild(cell);
+            }
+        }
+    </script>
+</body>
+</html>
