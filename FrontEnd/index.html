@@ -1,177 +1,201 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onitama - Mesa de Jogo</title>
-    
+    <title>Onitama - Movimentação das Peças</title>
     <style>
         body {
+            margin: 0;
+            padding: 20px;
+            background-color: #222;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #1e272e; /* Fundo escuro e elegante */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
+            height: 100vh;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
         }
 
-        .game-container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 40px; /* Espaço entre as colunas */
-            padding: 20px;
+        .tabuleiro-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            /* A imagem fornecida tem a proporção exata de 1.83 (Largura / Altura) */
+            aspect-ratio: 1000 / 546; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin: 0 auto;
         }
 
-        /* Colunas laterais para as cartas */
-        .card-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px; /* Espaço entre as duas cartas na mesma coluna */
+        .imagem-fundo {
+            width: 100%;
+            height: auto;     /* Faz a altura acompanhar a largura perfeitamente */
+            display: block;
+            pointer-events: none;
         }
 
-        .card {
-            width: 220px;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-            border: 2px solid #34495e;
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: scale(1.05); /* Pequeno efeito de zoom ao passar o rato */
-            cursor: pointer;
-        }
-
-        #board {
-            background-image: url('Tabuleiro_Onitama.jpg');
-            background-size: cover;
-            background-position: center;
-            border: 5px solid #000;
-            width: 500px;
-            height: 500px;
+        .grade-interativa {
+            position: absolute;
+            /* Ajustes milimétricos baseados na proporção da nova imagem */
+            top: 12.5%;     /* Alinha perfeitamente com a linha preta superior */
+            left: 29.5%;    /* Move o início do grid para a primeira linha preta vertical */
+            width: 41.5%;   /* Largura total cobrindo as 5 colunas do desenho */
+            height: 75.3%;  /* Altura total cobrindo as 5 linhas do desenho */
+            z-index: 2;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(5, 1fr);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
-            border-radius: 8px; /* Arredondar ligeiramente os cantos do tabuleiro */
-            overflow: hidden;
         }
 
-        .cell {
-            border: 1px solid rgba(0, 0, 0, 0.4);
-            background-color: rgba(255, 255, 255, 0.2);
+        .quadrado {
+            background: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
+            box-sizing: border-box;
         }
 
-        .piece {
-            width: 70px;
-            height: 70px;
+        /* Destaca sutilmente o cubo central para teste visual */
+        .quadrado[data-tipo="cubo"] {
+            outline: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        /* Efeito visual quando uma peça está sendo arrastada sobre o quadrado */
+        .quadrado.drag-over {
+            background: rgba(76, 175, 80, 0.3) !important; /* Verde translúcido */
+        }
+
+        /* --- ESTILO DAS PEÇAS --- */
+        .peca {
+            width: 70%;
+            height: 70%;
             border-radius: 50%;
+            cursor: grab;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.7);
-            cursor: pointer;
-            user-select: none; /* Evita selecionar o texto (emoji) ao clicar */
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            user-select: none;
+            z-index: 3;
+        }
+        .peca:active {
+            cursor: grabbing;
         }
 
-        /* Cores das equipas usando gradientes para efeito 3D */
-        .blue {
-            background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
-            border: 2px solid #1a5276;
-        }
+        /* Peças do Jogador Azul */
+        .peca.azul { background: #2196F3; border: 2px solid #0D47A1; }
+        .peca.azul.mestre { border-radius: 10px; background: #0D47A1; } /* Formato diferente para o Mestre */
 
-        .red {
-            background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
-            border: 2px solid #7b241c;
-        }
-
-        /* Destaque especial para o Mestre */
-        .master {
-            border: 4px solid #f1c40f; /* Borda dourada grossa */
-            box-shadow: 0 0 15px rgba(241, 196, 15, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
-        }
+        /* Peças do Jogador Vermelho */
+        .peca.vermelho { background: #F44336; border: 2px solid #B71C1C; }
+        .peca.vermelho.mestre { border-radius: 10px; background: #B71C1C; }
     </style>
 </head>
 <body>
 
-    <div class="game-container">
-        
-        <!-- Coluna da Esquerda (Cartas) -->
-        <div class="card-column" id="left-cards">
-            <img src="sapo.jpg" alt="Carta Sapo" class="card">
-            <img src="serpente.jpg" alt="Carta Serpente do Mar" class="card">
-        </div>
-
-        <!-- Coluna Central (Tabuleiro) -->
-        <div id="board-container">
-            <div id="board"></div>
-        </div>
-
-        <!-- Coluna da Direita (Cartas) -->
-        <div class="card-column" id="right-cards">
-            <img src="dragao.jpg" alt="Carta Dragão" class="card">
-            <img src="Carta_Inversa_Onitama.jpg" alt="Verso da Carta" class="card">
-        </div>
-
+    <div class="tabuleiro-container">
+        <!-- Sua imagem 1920x1080 do Onitama de fundo -->
+        <img class="imagem-fundo" src="Assets/tabuleir_onitama_melhorado.png" alt="Tabuleiro">
+        <div class="grade-interativa" id="grade"></div>
     </div>
 
     <script>
-        const boardElement = document.getElementById('board');
+        const grade = document.getElementById('grade');
 
-        // Loop para criar as 5 linhas e 5 colunas (25 células)
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 5; col++) {
+        // 1. GERAR O TABULEIRO
+        for (let linha = 0; linha < 5; linha++) {
+            for (let coluna = 0; coluna < 5; coluna++) { // Corrigido para coluna++
+                const div = document.createElement('div');
+                div.classList.add('quadrado');
+                div.dataset.tipo = 'cubo';
+                div.dataset.linhaCubo = linha;
+                div.dataset.colunaCubo = coluna;
                 
-                // Cria a célula do tabuleiro
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.dataset.row = row;
-                cell.dataset.col = col;
-
-                let piece = null;
-
-                // Peças Azuis (Linha Superior - Jogador de Cima)
-                if (row === 0) {
-                    piece = document.createElement('div');
-                    piece.classList.add('piece', 'blue');
-                    
-                    if (col === 2) {
-                        piece.classList.add('master');
-                        piece.innerHTML = '👑'; // Coroa para o mestre
-                    } else {
-                        piece.innerHTML = '♟️'; // Peão para os alunos
-                    }
-                }
-                
-                // Peças Vermelhas (Linha Inferior - Jogador de Baixo)
-                else if (row === 4) {
-                    piece = document.createElement('div');
-                    piece.classList.add('piece', 'red');
-                    
-                    if (col === 2) {
-                        piece.classList.add('master');
-                        piece.innerHTML = '👑'; // Coroa para o mestre
-                    } else {
-                        piece.innerHTML = '♟️'; // Peão para os alunos
-                    }
-                }
-
-                // Se criámos uma peça para esta célula, adicionamo-la dentro da célula
-                if (piece) {
-                    cell.appendChild(piece);
-                }
-
-                // Finalmente, adicionamos a célula ao tabuleiro
-                boardElement.appendChild(cell);
+                div.id = `quadrado-${linha}-${coluna}`; // IDs agora vão de 0 a 4
+                configurarZonaDeSoltura(div);
+                grade.appendChild(div);
             }
+        }
+
+        // 2. ADICIONAR AS PEÇAS INICIAIS DO ONITAMA (Na linha 0 e linha 4 do cubo)
+        // Jogador Azul (Inicia embaixo - Linha 4 do cubo central)
+        criarPeca('azul', 'aluno', 'quadrado-4-0', 'A');
+        criarPeca('azul', 'aluno', 'quadrado-4-1', 'A');
+        criarPeca('azul', 'mestre', 'quadrado-4-2', 'MESTRE'); // Mestre no centro
+        criarPeca('azul', 'aluno', 'quadrado-4-3', 'A');
+        criarPeca('azul', 'aluno', 'quadrado-4-4', 'A');
+
+        // Jogador Vermelho (Inicia em cima - Linha 0 do cubo central)
+        criarPeca('vermelho', 'aluno', 'quadrado-0-0', 'A');
+        criarPeca('vermelho', 'aluno', 'quadrado-0-1', 'A');
+        criarPeca('vermelho', 'mestre', 'quadrado-0-2', 'MESTRE'); // Mestre no centro
+        criarPeca('vermelho', 'aluno', 'quadrado-0-3', 'A');
+        criarPeca('vermelho', 'aluno', 'quadrado-0-4', 'A');
+
+
+        // FUNÇÃO PARA CRIAR PEÇAS DINAMICAMENTE
+        function criarPeca(time, tipo, idQuadradoAlvo, texto) {
+            const peca = document.createElement('div');
+            peca.classList.add('peca', time, tipo);
+            peca.innerText = texto;
+            peca.draggable = true; // Ativa o Drag do HTML5
+            
+            // Dá uma ID única para a peça para podermos rastreá-la no arrasto
+            peca.id = `peca-${time}-${tipo}-${idQuadradoAlvo}`;
+
+            // Eventos do Drag (Arrastar)
+            peca.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.id);
+            });
+
+            // Coloca a peça dentro do quadrado inicial correspondente
+            document.getElementById(idQuadradoAlvo).appendChild(peca);
+        }
+
+        // FUNÇÃO PARA PERMITIR SOLTAR PEÇAS APENAS NO CUBO 5X5
+        function configurarZonaDeSoltura(quadrado) {
+            // Quando a peça está voando por cima do quadrado
+            quadrado.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Obrigatório para permitir que o 'drop' aconteça
+                quadrado.classList.add('drag-over');
+            });
+
+            // Quando a peça sai de cima do quadrado sem soltar
+            quadrado.addEventListener('dragleave', () => {
+                quadrado.classList.remove('drag-over');
+            });
+
+            // Quando o jogador solta o clique do mouse (Soltar a peça)
+            quadrado.addEventListener('drop', (e) => {
+                e.preventDefault();
+                quadrado.classList.remove('drag-over');
+
+                const idPeca = e.dataTransfer.getData('text/plain');
+                const pecaArrastada = document.getElementById(idPeca);
+
+                // Regra Básica 1: Captura de peça (Se já tiver uma peça ali)
+                if (quadrado.hasChildNodes()) {
+                    const pecaExistente = quadrado.firstElementChild;
+                    
+                    // Verifica se a peça que já estava lá é do mesmo time
+                    if (pecaExistente.classList.contains(pecaArrastada.classList.contains('azul') ? 'azul' : 'vermelho')) {
+                        alert("Você não pode mover para uma casa ocupada por sua própria peça!");
+                        return;
+                    } else {
+                        // Se for do time inimigo, remove ela (Captura!)
+                        console.log(`Peça inimiga ${pecaExistente.id} foi capturada!`);
+                        pecaExistente.remove();
+                    }
+                }
+
+                // Move o elemento HTML da peça para dentro do novo quadrado clicado
+                quadrado.appendChild(pecaArrastada);
+                
+                console.log(`Peça movida para a casa do Cubo: Linha ${quadrado.dataset.linhaCubo}, Coluna ${quadrado.dataset.colunaCubo}`);
+            });
         }
     </script>
 </body>
