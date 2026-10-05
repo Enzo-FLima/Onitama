@@ -42,10 +42,10 @@
         .grade-interativa {
             position: absolute;
             /* Ajustes milimétricos baseados na proporção da nova imagem */
-            top: 11.5%;     /* Alinha perfeitamente com a linha preta superior */
+            top: 12.5%;     /* Alinha perfeitamente com a linha preta superior */
             left: 30.0%;    /* Move o início do grid para a primeira linha preta vertical */
             width: 39.7%;   /* Largura total cobrindo as 5 colunas do desenho */
-            height: 71.5%;  /* Altura total cobrindo as 5 linhas do desenho */
+            height: 75.0%;  /* Altura total cobrindo as 5 linhas do desenho */
             z-index: 2;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -70,45 +70,266 @@
             background: rgba(76, 175, 80, 0.3) !important; /* Verde translúcido */
         }
 
-        /* --- ESTILO DAS PEÇAS --- */
+        /* --- ESTILO DAS CARTAS CORRIGIDO --- */
+        .zona-carta {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-align: center;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Cartas do Adversário (Topo) - Invertidas em 270deg para que o oponente veja o verso do lado correto */
+         .carta-topo-1 { 
+            top: -24.5%; 
+            left: 29.0%; 
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); /* Mantém deitada acompanhando o contêiner */
+        }
+        .carta-topo-2 { 
+            top: -24.5%; 
+            left: 51.8%; 
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); 
+        }
+        
+        /* Cartas do Jogador Azul (Baixo) - Deitadas horizontalmente */
+        .carta-baixo-1 { 
+            bottom: -24.5%; 
+            left: 29.0%; 
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); 
+        }
+        .carta-baixo-2 { 
+            bottom: -24.5%; 
+            left: 51.8%; 
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); 
+        }
+        
+        /* Carta Lateral Direita - Deitada horizontalmente no slot da direita */
+        .carta-lateral { 
+            top: 42.5%; 
+            right: -13.5%; 
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); 
+        }
+
+        /* Verso do Baralho/Deck na Esquerda - Deitada horizontalmente no slot da esquerda */
+        .baralho-deck { 
+            top: 42.5%; 
+            left: -13.5%;            
+            width: 19.3%;           
+            height: 20.0%;          
+            transform: rotate(0deg); 
+            background-image: url('Assets/Carta_Inversa_Onitama.png'); 
+            background-color: rgba(139, 0, 0, 0.35); 
+            border-color: rgba(139, 0, 0, 0.6); 
+            background-size: cover; 
+        }
+
+        /* --- ESTILO DAS PEÇAS CORRIGIDO E AUMENTADO --- */
         .peca {
-            width: 70%;
-            height: 70%;
-            border-radius: 50%;
+            box-sizing: border-box;
+            width: 90%;
+            height: auto;
+            max-width: 90%;
+            max-height: 90%;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%; 
             cursor: grab;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 1.15rem;
             color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
             user-select: none;
             z-index: 3;
+            transition: filter 0.15s ease, box-shadow 0.15s ease;
         }
+
+        .peca:hover {
+            filter: brightness(1.12);
+        }
+
         .peca:active {
             cursor: grabbing;
+            filter: brightness(0.95);
         }
 
         /* Peças do Jogador Azul */
-        .peca.azul { background: #2196F3; border: 2px solid #0D47A1; }
-        .peca.azul.mestre { border-radius: 10px; background: #0D47A1; } /* Formato diferente para o Mestre */
+        .peca.azul { 
+            background: radial-gradient(circle at 35% 35%, #42a5f5, #1976d2); 
+            border: 2px solid #0d47a1; 
+        }
+
+        .peca.azul.mestre { 
+            width: 96%;
+            max-width: 96%;
+            max-height: 96%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #1e88e5, #0d47a1); 
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.4);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }  
 
         /* Peças do Jogador Vermelho */
-        .peca.vermelho { background: #F44336; border: 2px solid #B71C1C; }
-        .peca.vermelho.mestre { border-radius: 10px; background: #B71C1C; }
+        .peca.vermelho { 
+            background: radial-gradient(circle at 35% 35%, #ef5350, #d32f2f); 
+            border: 2px solid #b71c1c; 
+        }
+
+        .peca.vermelho.mestre { 
+            width: 96%;
+            max-width: 96%;
+            max-height: 96%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #e53935, #b71c1c); 
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.4);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
 
     <div class="tabuleiro-container">
-        <!-- Sua imagem 1920x1080 do Onitama de fundo -->
         <img class="imagem-fundo" src="Assets/tabuleir_onitama_melhorado.png" alt="Tabuleiro">
+        
+        <!-- Tabuleiro Central -->
         <div class="grade-interativa" id="grade"></div>
+
+        <!-- Zonas das Cartas -->
+        <div class="zona-carta carta-topo-1" id="carta-vermelho-1"></div>
+        <div class="zona-carta carta-topo-2" id="carta-vermelho-2"></div>
+        <div class="zona-carta carta-baixo-1" id="carta-azul-1"></div>
+        <div class="zona-carta carta-baixo-2" id="carta-azul-2"></div>
+        <div class="zona-carta carta-lateral" id="carta-reserva"></div>
+
+        <!-- Espaço para o Baralho -->
+        <div class="zona-carta baralho-deck" id="deck-baralho">BARALHO</div>
     </div>
+
 
     <script>
         const grade = document.getElementById('grade');
+        
+        // ==========================================
+        // CONFIGURAÇÃO DO SISTEMA DE CARTAS
+        // ==========================================
+        
+        // 1. Defina o nome da carta e o caminho da imagem dela na sua pasta Assets
+        const listaCartas = [
+        // Jogo Base (16 Cartas Clássicas)
+            { nome: 'Sapo', imagem: 'Assets/sapo.png' },
+            { nome: 'Dragão', imagem: 'Assets/dragao.png' },
+            { nome: 'Serpente do Mar', imagem: 'Assets/serpente.png' },
+            { nome: 'Tigre', imagem: 'Assets/tigre.png' },
+            { nome: 'Caranguejo', imagem: 'Assets/caranguejo.png' },
+            { nome: 'Macaco', imagem: 'Assets/macaco.png' },
+            { nome: 'Garça', imagem: 'Assets/garca.png' },
+            { nome: 'Galo', imagem: 'Assets/galo.png' },
+            { nome: 'Boi', imagem: 'Assets/boi.png' },
+            { nome: 'Cavalo', imagem: 'Assets/cavalo.png' },
+            { nome: 'Enguia', imagem: 'Assets/enguia.png' },
+            { nome: 'Elefante', imagem: 'Assets/elefante.png' },
+            { nome: 'Louva-a-Deus', imagem: 'Assets/louva_deus.png' },
+            { nome: 'Javali', imagem: 'Assets/javali.png' },
+            { nome: 'Coelho', imagem: 'Assets/coelho.png' },
+            { nome: 'Ganso', imagem: 'Assets/ganso.png' },
+
+            // Expansão: Sensei's Path (16 Cartas Adicionais)
+            { nome: 'Girafa', imagem: 'Assets/girafa.png' },
+            { nome: 'Fênix', imagem: 'Assets/fenix.png' },
+            { nome: 'Tartaruga', imagem: 'Assets/tartaruga.png' },
+            { nome: 'Cachorro', imagem: 'Assets/cachorro.png' },
+            { nome: 'Rato', imagem: 'Assets/rato.png' },
+            { nome: 'Cobra', imagem: 'Assets/cobra.png' },
+            { nome: 'Lontra', imagem: 'Assets/lontra.png' },
+            { nome: 'Panda', imagem: 'Assets/panda.png' },
+            { nome: 'Urso', imagem: 'Assets/urso.png' },
+            { nome: 'Raposa', imagem: 'Assets/raposa.png' }
+        ];
+        // 2. Função para embaralhar e sortear 5 cartas únicas
+        function sortearCartas() {
+            let embaralhado = [...listaCartas];
+            
+            // Algoritmo clássico de embaralhamento (Fisher-Yates)
+            for (let i = embaralhado.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [embaralhado[i], embaralhado[j]] = [embaralhado[j], embaralhado[i]];
+            }
+
+            // Distribuindo as cartas sorteadas
+            const cartasSorteadas = {
+                vermelho1: embaralhado[0],
+                vermelho2: embaralhado[1],
+                azul1: embaralhado[2],
+                azul2: embaralhado[3],
+                reserva: embaralhado[4]
+            };
+
+            // Aplicar visualmente: passamos 'true' para ocultar e 'false' para mostrar livremente
+            // Supondo que a perspectiva inicial da tela seja do Jogador Azul (baixo):
+            aplicarCartaNaZona('carta-vermelho-1', cartasSorteadas.vermelho1, true);  // Oculta (Verso)
+            aplicarCartaNaZona('carta-vermelho-2', cartasSorteadas.vermelho2, true);  // Oculta (Verso)
+            
+            aplicarCartaNaZona('carta-azul-1', cartasSorteadas.azul1, false);         // Aberta
+            aplicarCartaNaZona('carta-azul-2', cartasSorteadas.azul2, false);         // Aberta
+            
+            aplicarCartaNaZona('carta-reserva', cartasSorteadas.reserva, false);
+        }
+
+        // 3. Auxiliar para injetar o fundo (aberto ou verso oculto)
+        function aplicarCartaNaZona(idElemento, dadosCarta, deveOcultar) {
+            const elemento = document.getElementById(idElemento);
+            if (elemento) {
+                elemento.style.border = 'none';
+
+                if (deveOcultar) {
+                    // Se deve ocultar, aplica a imagem de verso e muda o texto
+                    elemento.style.backgroundImage = "url('Assets/Carta_Inversa_Onitama.png')"; // Imagem de verso
+                    elemento.style.backgroundColor = "rgba(139, 0, 0, 0.6)"; // Cor escura de segurança
+                    elemento.innerText = ""; // Esconde o nome do movimento do rival
+                } else {
+                    // Se estiver aberta, mostra as informações reais normalmente
+                    elemento.style.backgroundImage = `url('${dadosCarta.imagem}')`;
+                    //elemento.innerText = dadosCarta.nome; 
+                    elemento.style.textShadow = '1px 1px 3px black';
+                    elemento.style.color = '#fff';
+                }
+            }
+        }
+
+        sortearCartas();
+
+        // ==========================================
+        // GERAÇÃO DO TABULEIRO E PEÇAS
+        // ==========================================
 
         // 1. GERAR O TABULEIRO
         for (let linha = 0; linha < 5; linha++) {
@@ -169,8 +390,10 @@
             });
 
             // Quando a peça sai de cima do quadrado sem soltar
-            quadrado.addEventListener('dragleave', () => {
-                quadrado.classList.remove('drag-over');
+            quadrado.addEventListener('dragleave', (e) => {
+                if (!quadrado.contains(e.relatedTarget)) {
+                    quadrado.classList.remove('drag-over');
+                }
             });
 
             // Quando o jogador solta o clique do mouse (Soltar a peça)
@@ -181,12 +404,19 @@
                 const idPeca = e.dataTransfer.getData('text/plain');
                 const pecaArrastada = document.getElementById(idPeca);
 
+                if (!pecaArrastada) return;
+
                 // Regra Básica 1: Captura de peça (Se já tiver uma peça ali)
-                if (quadrado.hasChildNodes()) {
-                    const pecaExistente = quadrado.firstElementChild;
-                    
+                const pecaExistente = quadrado.querySelector('.peca');
+                if (pecaExistente) {
+                    // Se soltou na mesma casa onde a peça já estava, apenas encerra sem erro
+                    if (pecaExistente === pecaArrastada) {
+                        return;
+                    }
+
                     // Verifica se a peça que já estava lá é do mesmo time
-                    if (pecaExistente.classList.contains(pecaArrastada.classList.contains('azul') ? 'azul' : 'vermelho')) {
+                    const timeArrastada = pecaArrastada.classList.contains('azul') ? 'azul' : 'vermelho';
+                    if (pecaExistente.classList.contains(timeArrastada)) {
                         alert("Você não pode mover para uma casa ocupada por sua própria peça!");
                         return;
                     } else {
