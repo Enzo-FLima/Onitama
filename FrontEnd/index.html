@@ -8,7 +8,12 @@
         body {
             margin: 0;
             padding: 20px;
-            background-color: #222;
+            /* Substitua o caminho abaixo pela sua imagem de fundo geral */
+            background-image: url('Assets/fundo_Onitama.png'); 
+            background-size: cover;       /* Faz a imagem cobrir a tela inteira sem distorcer */
+            background-position: center;  /* Centraliza a imagem na tela */
+            background-repeat: no-repeat; /* Impede que a imagem fique se repetindo em mosaico */
+            background-attachment: fixed; /* Deixa o fundo fixo se houver rolagem */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -29,7 +34,7 @@
 
         .imagem-fundo {
             width: 100%;
-            height: auto;     /* Faz a altura acompanhar a largura perfeitamente */
+            height: 100%;     /* Faz a altura acompanhar a largura perfeitamente */
             display: block;
             pointer-events: none;
         }
@@ -37,10 +42,10 @@
         .grade-interativa {
             position: absolute;
             /* Ajustes milimétricos baseados na proporção da nova imagem */
-            top: 12.5%;     /* Alinha perfeitamente com a linha preta superior */
-            left: 29.5%;    /* Move o início do grid para a primeira linha preta vertical */
-            width: 41.5%;   /* Largura total cobrindo as 5 colunas do desenho */
-            height: 75.3%;  /* Altura total cobrindo as 5 linhas do desenho */
+            top: 11.5%;     /* Alinha perfeitamente com a linha preta superior */
+            left: 30.0%;    /* Move o início do grid para a primeira linha preta vertical */
+            width: 39.7%;   /* Largura total cobrindo as 5 colunas do desenho */
+            height: 71.5%;  /* Altura total cobrindo as 5 linhas do desenho */
             z-index: 2;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
