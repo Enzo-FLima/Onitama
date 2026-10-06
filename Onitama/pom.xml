@@ -22,4 +22,18 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- Executa o servidor: mvn compile exec:java -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <mainClass>Enzo.lima.ServidorOnitama</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

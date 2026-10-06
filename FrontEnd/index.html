@@ -213,13 +213,82 @@
             font-weight: 800;
             letter-spacing: 0.5px;
         }
+
+        /* --- Interface de rede / jogo (Trabalho 02) --- */
+        #painel {
+            position: fixed;
+            top: 8px;
+            left: 8px;
+            width: 270px;
+            z-index: 10;
+            font-size: 0.8rem;
+            color: #fff;
+            pointer-events: none;
+        }
+        #status {
+            background: rgba(0, 0, 0, 0.75);
+            border-left: 5px solid #888;
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+        #status.vez-minha { border-color: #4caf50; }
+        #status.erro { border-color: #f44336; }
+        #log {
+            margin-top: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 0.68rem;
+            max-height: 230px;
+            overflow: hidden;
+            word-break: break-all;
+        }
+        #log div.env { color: #ffd54f; }
+        #log div.rec { color: #aed581; }
+        .zona-carta.minha { cursor: pointer; }
+        .zona-carta.minha:hover { filter: brightness(1.15); }
+        .zona-carta.selecionada {
+            outline: 4px solid #ffd700;
+            box-shadow: 0 0 14px #ffd700;
+        }
+        #fim {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        #fim button { font-size: 1.1rem; padding: 10px 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <div id="painel">
+        <div id="status">Conectando ao servidor...</div>
+        <div id="log"></div>
+    </div>
+
+    <div id="fim">
+        <div id="fim-texto"></div>
+        <button id="fim-botao">Jogar novamente</button>
+    </div>
+
+    <!-- As zonas "azul" ficam sempre embaixo e mostram as cartas DO JOGADOR LOCAL;
+         as zonas "vermelho" ficam em cima e mostram as cartas do adversário. -->
     <div class="tabuleiro-container">
         <img class="imagem-fundo" src="Assets/tabuleir_onitama_melhorado.png" alt="Tabuleiro">
-        
+
         <!-- Tabuleiro Central -->
         <div class="grade-interativa" id="grade"></div>
 
@@ -236,202 +305,302 @@
 
 
     <script>
+        // ==========================================================================
+        //  CLIENTE ONITAMA
+        //  Este código NÃO decide nada sobre as regras: ele envia a intenção de jogada
+        //  ao servidor (MOVE|...) e redesenha o tabuleiro com o STATE que o servidor
+        //  devolve. Assim os dois jogadores sempre enxergam o mesmo estado.
+        //  A notação das mensagens está documentada no README.md.
+        // ==========================================================================
         const grade = document.getElementById('grade');
-        
-        // ==========================================
-        // CONFIGURAÇÃO DO SISTEMA DE CARTAS
-        // ==========================================
-        
-        // 1. Defina o nome da carta e o caminho da imagem dela na sua pasta Assets
-        const listaCartas = [
-        // Jogo Base (16 Cartas Clássicas)
-            { nome: 'Sapo', imagem: 'Assets/sapo.png' },
-            { nome: 'Dragão', imagem: 'Assets/dragao.png' },
-            { nome: 'Serpente do Mar', imagem: 'Assets/serpente.png' },
-            { nome: 'Tigre', imagem: 'Assets/tigre.png' },
-            { nome: 'Caranguejo', imagem: 'Assets/caranguejo.png' },
-            { nome: 'Macaco', imagem: 'Assets/macaco.png' },
-            { nome: 'Garça', imagem: 'Assets/garca.png' },
-            { nome: 'Galo', imagem: 'Assets/galo.png' },
-            { nome: 'Boi', imagem: 'Assets/boi.png' },
-            { nome: 'Cavalo', imagem: 'Assets/cavalo.png' },
-            { nome: 'Enguia', imagem: 'Assets/enguia.png' },
-            { nome: 'Elefante', imagem: 'Assets/elefante.png' },
-            { nome: 'Louva-a-Deus', imagem: 'Assets/louva_deus.png' },
-            { nome: 'Javali', imagem: 'Assets/javali.png' },
-            { nome: 'Coelho', imagem: 'Assets/coelho.png' },
-            { nome: 'Ganso', imagem: 'Assets/ganso.png' },
+        const elStatus = document.getElementById('status');
+        const elLog = document.getElementById('log');
 
-            // Expansão: Sensei's Path (16 Cartas Adicionais)
-            { nome: 'Girafa', imagem: 'Assets/girafa.png' },
-            { nome: 'Fênix', imagem: 'Assets/fenix.png' },
-            { nome: 'Tartaruga', imagem: 'Assets/tartaruga.png' },
-            { nome: 'Cachorro', imagem: 'Assets/cachorro.png' },
-            { nome: 'Rato', imagem: 'Assets/rato.png' },
-            { nome: 'Cobra', imagem: 'Assets/cobra.png' },
-            { nome: 'Lontra', imagem: 'Assets/lontra.png' },
-            { nome: 'Panda', imagem: 'Assets/panda.png' },
-            { nome: 'Urso', imagem: 'Assets/urso.png' },
-            { nome: 'Raposa', imagem: 'Assets/raposa.png' }
+        // ---- Catálogo de cartas (id = mesmo identificador usado pelo servidor) ----
+        const CARTAS = [
+            // Jogo Base (16 Cartas Clássicas)
+            { id: 'SAPO', nome: 'Sapo', imagem: 'Assets/sapo.png' },
+            { id: 'DRAGAO', nome: 'Dragão', imagem: 'Assets/dragao.png' },
+            { id: 'SERPENTE', nome: 'Serpente do Mar', imagem: 'Assets/serpente.png' },
+            { id: 'TIGRE', nome: 'Tigre', imagem: 'Assets/tigre.png' },
+            { id: 'CARANGUEJO', nome: 'Caranguejo', imagem: 'Assets/caranguejo.png' },
+            { id: 'MACACO', nome: 'Macaco', imagem: 'Assets/macaco.png' },
+            { id: 'GARCA', nome: 'Garça', imagem: 'Assets/garca.png' },
+            { id: 'GALO', nome: 'Galo', imagem: 'Assets/galo.png' },
+            { id: 'BOI', nome: 'Boi', imagem: 'Assets/boi.png' },
+            { id: 'CAVALO', nome: 'Cavalo', imagem: 'Assets/cavalo.png' },
+            { id: 'ENGUIA', nome: 'Enguia', imagem: 'Assets/enguia.png' },
+            { id: 'ELEFANTE', nome: 'Elefante', imagem: 'Assets/elefante.png' },
+            { id: 'LOUVA_DEUS', nome: 'Louva-a-Deus', imagem: 'Assets/louva_deus.png' },
+            { id: 'JAVALI', nome: 'Javali', imagem: 'Assets/javali.png' },
+            { id: 'COELHO', nome: 'Coelho', imagem: 'Assets/coelho.png' },
+            { id: 'GANSO', nome: 'Ganso', imagem: 'Assets/ganso.png' },
+            // Expansão: Sensei's Path
+            { id: 'GIRAFA', nome: 'Girafa', imagem: 'Assets/girafa.png' },
+            { id: 'FENIX', nome: 'Fênix', imagem: 'Assets/fenix.png' },
+            { id: 'TARTARUGA', nome: 'Tartaruga', imagem: 'Assets/tartaruga.png' },
+            { id: 'CACHORRO', nome: 'Cachorro', imagem: 'Assets/cachorro.png' },
+            { id: 'RATO', nome: 'Rato', imagem: 'Assets/rato.png' },
+            { id: 'COBRA', nome: 'Cobra', imagem: 'Assets/cobra.png' },
+            { id: 'LONTRA', nome: 'Lontra', imagem: 'Assets/lontra.png' },
+            { id: 'PANDA', nome: 'Panda', imagem: 'Assets/panda.png' },
+            { id: 'URSO', nome: 'Urso', imagem: 'Assets/urso.png' },
+            { id: 'RAPOSA', nome: 'Raposa', imagem: 'Assets/raposa.png' }
         ];
-        // 2. Função para embaralhar e sortear 5 cartas únicas
-        function sortearCartas() {
-            let embaralhado = [...listaCartas];
-            
-            // Algoritmo clássico de embaralhamento (Fisher-Yates)
-            for (let i = embaralhado.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [embaralhado[i], embaralhado[j]] = [embaralhado[j], embaralhado[i]];
-            }
+        const cartaPorId = Object.fromEntries(CARTAS.map(c => [c.id, c]));
+        const nomeCarta = id => (cartaPorId[id] ? cartaPorId[id].nome : id);
 
-            // Distribuindo as cartas sorteadas
-            const cartasSorteadas = {
-                vermelho1: embaralhado[0],
-                vermelho2: embaralhado[1],
-                azul1: embaralhado[2],
-                azul2: embaralhado[3],
-                reserva: embaralhado[4]
-            };
+        // ---- Estado local (apenas o necessário para desenhar; a verdade está no servidor) ----
+        let eu = 0;                    // número do jogador desta janela (1 = azul, 2 = vermelho)
+        let vez = 0;                   // quem joga agora, segundo o servidor
+        let cartaSelecionada = null;   // id da carta escolhida para a próxima jogada
+        let fase = 'ESPERANDO';
 
-            // Aplicar visualmente: passamos 'true' para ocultar e 'false' para mostrar livremente
-            // Supondo que a perspectiva inicial da tela seja do Jogador Azul (baixo):
-            aplicarCartaNaZona('carta-vermelho-1', cartasSorteadas.vermelho1, true);  // Oculta (Verso)
-            aplicarCartaNaZona('carta-vermelho-2', cartasSorteadas.vermelho2, true);  // Oculta (Verso)
-            
-            aplicarCartaNaZona('carta-azul-1', cartasSorteadas.azul1, false);         // Aberta
-            aplicarCartaNaZona('carta-azul-2', cartasSorteadas.azul2, false);         // Aberta
-            
-            aplicarCartaNaZona('carta-reserva', cartasSorteadas.reserva, false);
+        // O jogador 2 enxerga o tabuleiro girado 180° para ter suas peças sempre embaixo.
+        // A mesma função converte servidor<->tela (a conversão é a sua própria inversa).
+        function girar(linha, coluna) {
+            return eu === 2 ? [4 - linha, 4 - coluna] : [linha, coluna];
         }
 
-        // 3. Auxiliar para injetar o fundo (aberto ou verso oculto)
-        function aplicarCartaNaZona(idElemento, dadosCarta, deveOcultar) {
-            const elemento = document.getElementById(idElemento);
-            if (elemento) {
-                elemento.style.border = 'none';
+        // ==========================================
+        //    CONEXÃO WEBSOCKET COM O SERVIDOR JAVA
+        // ==========================================
+        const params = new URLSearchParams(location.search);
+        const host = location.hostname || 'localhost';
+        const socket = new WebSocket(params.get('server') || `ws://${host}:8080`);
 
-                if (deveOcultar) {
-                    // Se deve ocultar, aplica a imagem de verso e muda o texto
-                    elemento.style.backgroundImage = "url('Assets/Carta_Inversa_Onitama.png')"; // Imagem de verso
-                    elemento.style.backgroundColor = "rgba(139, 0, 0, 0.6)"; // Cor escura de segurança
-                    elemento.innerText = ""; // Esconde o nome do movimento do rival
-                } else {
-                    // Se estiver aberta, mostra as informações reais normalmente
-                    elemento.style.backgroundImage = `url('${dadosCarta.imagem}')`;
-                    //elemento.innerText = dadosCarta.nome; 
-                    elemento.style.textShadow = '1px 1px 3px black';
-                    elemento.style.color = '#fff';
+        socket.onopen = () => registrar('Conectado ao servidor.', 'rec');
+        socket.onclose = () => status('Conexão com o servidor perdida.', 'erro');
+        socket.onerror = () => status('Não foi possível conectar ao servidor (porta 8080).', 'erro');
+        socket.onmessage = (event) => tratarMensagem(event.data);
+
+        function enviar(msg) {
+            socket.send(msg);
+            registrar('▶ ' + msg, 'env');
+        }
+
+        // ==========================================
+        //    INTERPRETAÇÃO DAS MENSAGENS DO SERVIDOR
+        // ==========================================
+        function tratarMensagem(msg) {
+            registrar('◀ ' + msg, 'rec');
+            const c = msg.split('|');
+            switch (c[0]) {
+                case 'CONNECT':
+                    eu = parseInt(c[1]);
+                    document.title = `Onitama - Jogador ${eu} (${eu === 1 ? 'Azul' : 'Vermelho'})`;
+                    break;
+                case 'WAIT':
+                    status(c[1]);
+                    esconderFim();
+                    break;
+                case 'START':
+                    esconderFim();
+                    cartaSelecionada = null;
+                    break;
+                case 'CARDS':   // cartas recebidas no início (o STATE seguinte desenha tudo)
+                    break;
+                case 'TURN':
+                    vez = parseInt(c[1]);
+                    break;
+                case 'MOVED':
+                    break;      // o STATE que vem a seguir redesenha o tabuleiro
+                case 'CAPTURE':
+                    break;
+                case 'SWAP':
+                    if (parseInt(c[1]) === eu) cartaSelecionada = null;
+                    break;
+                case 'STATE':
+                    desenharEstado(c);
+                    break;
+                case 'WIN':
+                    mostrarFim(parseInt(c[1]) === eu ? '🏆 Você venceu!' : 'Fim de jogo', c[2]);
+                    break;
+                case 'LOSE':
+                    mostrarFim('Você perdeu...', c[2]);
+                    break;
+                case 'OPPONENT_LEFT':
+                    status('O adversário desconectou.', 'erro');
+                    break;
+                case 'ERROR':
+                    status('⚠ ' + (c[2] || c[1]), 'erro');
+                    break;
+            }
+        }
+
+        // ==========================================
+        //    DESENHO DO ESTADO RECEBIDO (STATE)
+        //    STATE|vez|fase|mao1a,mao1b|mao2a,mao2b|reserva|tabuleiro(25 casas)
+        // ==========================================
+        function desenharEstado(c) {
+            vez = parseInt(c[1]);
+            fase = c[2];
+            const maos = { 1: c[3].split(','), 2: c[4].split(',') };
+            const minhas = maos[eu === 2 ? 2 : 1];
+            const deles = maos[eu === 2 ? 1 : 2];
+
+            if (cartaSelecionada && !minhas.includes(cartaSelecionada)) cartaSelecionada = null;
+
+            aplicarCarta('carta-azul-1', minhas[0], true);
+            aplicarCarta('carta-azul-2', minhas[1], true);
+            aplicarCarta('carta-vermelho-1', deles[0], false);
+            aplicarCarta('carta-vermelho-2', deles[1], false);
+            aplicarCarta('carta-reserva', c[5], false);
+
+            // Redesenha as peças a partir da matriz do servidor
+            grade.querySelectorAll('.peca').forEach(p => p.remove());
+            const tab = c[6];
+            for (let l = 0; l < 5; l++) {
+                for (let col = 0; col < 5; col++) {
+                    const ch = tab.charAt(l * 5 + col);
+                    if (ch === '.') continue;
+                    const dono = ch.toLowerCase() === 'a' ? 1 : 2;
+                    const mestre = ch === ch.toUpperCase();
+                    const [dl, dc] = girar(l, col);
+                    criarPeca(dono === 1 ? 'azul' : 'vermelho', mestre ? 'mestre' : 'aluno',
+                              `quadrado-${dl}-${dc}`, mestre ? 'MESTRE' : 'A', l, col, dono === eu);
                 }
             }
+            atualizarStatusDeTurno();
         }
 
-        sortearCartas();
+        function atualizarStatusDeTurno() {
+            const cor = eu === 1 ? 'Azul' : 'Vermelho';
+            if (fase === 'ESPERANDO') return;
+            if (fase === 'FIM') return;
+            if (vez === eu) {
+                status(`Você é o jogador ${eu} (${cor}). SUA VEZ: escolha uma carta e arraste uma peça.`, 'vez-minha');
+            } else {
+                status(`Você é o jogador ${eu} (${cor}). Aguarde a jogada do adversário...`);
+            }
+        }
+
+        // ---- Cartas ----
+        function aplicarCarta(idElemento, idCarta, minha) {
+            const el = document.getElementById(idElemento);
+            el.style.border = 'none';
+            el.dataset.cartaId = idCarta || '';
+            el.classList.toggle('minha', minha && !!cartaPorId[idCarta]);
+            el.classList.toggle('selecionada', minha && idCarta === cartaSelecionada);
+            if (cartaPorId[idCarta]) {
+                el.style.backgroundImage = `url('${cartaPorId[idCarta].imagem}')`;
+                el.title = cartaPorId[idCarta].nome;
+            } else {
+                el.style.backgroundImage = 'none';
+                el.title = '';
+            }
+            el.onclick = minha ? () => selecionarCarta(el.dataset.cartaId) : null;
+        }
+
+        function selecionarCarta(id) {
+            if (!cartaPorId[id]) return;
+            cartaSelecionada = id;
+            ['carta-azul-1', 'carta-azul-2'].forEach(z => {
+                const el = document.getElementById(z);
+                el.classList.toggle('selecionada', el.dataset.cartaId === id);
+            });
+            status(`Carta "${nomeCarta(id)}" selecionada. Arraste uma peça sua.`, vez === eu ? 'vez-minha' : '');
+        }
 
         // ==========================================
-        // GERAÇÃO DO TABULEIRO E PEÇAS
+        // GERAÇÃO DO TABULEIRO (casas 5x5 da tela)
         // ==========================================
-
-        // 1. GERAR O TABULEIRO
         for (let linha = 0; linha < 5; linha++) {
-            for (let coluna = 0; coluna < 5; coluna++) { // Corrigido para coluna++
+            for (let coluna = 0; coluna < 5; coluna++) {
                 const div = document.createElement('div');
                 div.classList.add('quadrado');
                 div.dataset.tipo = 'cubo';
                 div.dataset.linhaCubo = linha;
                 div.dataset.colunaCubo = coluna;
-                
-                div.id = `quadrado-${linha}-${coluna}`; // IDs agora vão de 0 a 4
+                div.id = `quadrado-${linha}-${coluna}`;
                 configurarZonaDeSoltura(div);
                 grade.appendChild(div);
             }
         }
 
-        // 2. ADICIONAR AS PEÇAS INICIAIS DO ONITAMA (Na linha 0 e linha 4 do cubo)
-        // Jogador Azul (Inicia embaixo - Linha 4 do cubo central)
-        criarPeca('azul', 'aluno', 'quadrado-4-0', 'A');
-        criarPeca('azul', 'aluno', 'quadrado-4-1', 'A');
-        criarPeca('azul', 'mestre', 'quadrado-4-2', 'MESTRE'); // Mestre no centro
-        criarPeca('azul', 'aluno', 'quadrado-4-3', 'A');
-        criarPeca('azul', 'aluno', 'quadrado-4-4', 'A');
-
-        // Jogador Vermelho (Inicia em cima - Linha 0 do cubo central)
-        criarPeca('vermelho', 'aluno', 'quadrado-0-0', 'A');
-        criarPeca('vermelho', 'aluno', 'quadrado-0-1', 'A');
-        criarPeca('vermelho', 'mestre', 'quadrado-0-2', 'MESTRE'); // Mestre no centro
-        criarPeca('vermelho', 'aluno', 'quadrado-0-3', 'A');
-        criarPeca('vermelho', 'aluno', 'quadrado-0-4', 'A');
-
-
-        // FUNÇÃO PARA CRIAR PEÇAS DINAMICAMENTE
-        function criarPeca(time, tipo, idQuadradoAlvo, texto) {
+        // FUNÇÃO PARA CRIAR PEÇAS DINAMICAMENTE (linhaServ/colServ = posição real no servidor)
+        function criarPeca(time, tipo, idQuadradoAlvo, texto, linhaServ, colServ, minha) {
             const peca = document.createElement('div');
             peca.classList.add('peca', time, tipo);
             peca.innerText = texto;
-            peca.draggable = true; // Ativa o Drag do HTML5
-            
-            // Dá uma ID única para a peça para podermos rastreá-la no arrasto
+            peca.draggable = minha; // só as peças do jogador local podem ser arrastadas
+            if (!minha) peca.style.cursor = 'default';
             peca.id = `peca-${time}-${tipo}-${idQuadradoAlvo}`;
 
-            // Eventos do Drag (Arrastar)
             peca.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', e.target.id);
+                // guarda a origem na coordenada do SERVIDOR
+                e.dataTransfer.setData('text/plain', `${linhaServ},${colServ}`);
             });
 
-            // Coloca a peça dentro do quadrado inicial correspondente
             document.getElementById(idQuadradoAlvo).appendChild(peca);
         }
 
-        // FUNÇÃO PARA PERMITIR SOLTAR PEÇAS APENAS NO CUBO 5X5
+        // Soltar a peça apenas ENVIA o pedido de jogada; quem move de fato é o servidor.
         function configurarZonaDeSoltura(quadrado) {
-            // Quando a peça está voando por cima do quadrado
             quadrado.addEventListener('dragover', (e) => {
-                e.preventDefault(); // Obrigatório para permitir que o 'drop' aconteça
+                e.preventDefault();
                 quadrado.classList.add('drag-over');
             });
 
-            // Quando a peça sai de cima do quadrado sem soltar
             quadrado.addEventListener('dragleave', (e) => {
-                if (!quadrado.contains(e.relatedTarget)) {
-                    quadrado.classList.remove('drag-over');
-                }
+                if (!quadrado.contains(e.relatedTarget)) quadrado.classList.remove('drag-over');
             });
 
-            // Quando o jogador solta o clique do mouse (Soltar a peça)
             quadrado.addEventListener('drop', (e) => {
                 e.preventDefault();
                 quadrado.classList.remove('drag-over');
 
-                const idPeca = e.dataTransfer.getData('text/plain');
-                const pecaArrastada = document.getElementById(idPeca);
+                const origem = e.dataTransfer.getData('text/plain');
+                if (!origem) return;
+                const [lo, co] = origem.split(',').map(Number);
+                const [ld, cd] = girar(Number(quadrado.dataset.linhaCubo), Number(quadrado.dataset.colunaCubo));
+                if (lo === ld && co === cd) return;
 
-                if (!pecaArrastada) return;
-
-                // Regra Básica 1: Captura de peça (Se já tiver uma peça ali)
-                const pecaExistente = quadrado.querySelector('.peca');
-                if (pecaExistente) {
-                    // Se soltou na mesma casa onde a peça já estava, apenas encerra sem erro
-                    if (pecaExistente === pecaArrastada) {
-                        return;
-                    }
-
-                    // Verifica se a peça que já estava lá é do mesmo time
-                    const timeArrastada = pecaArrastada.classList.contains('azul') ? 'azul' : 'vermelho';
-                    if (pecaExistente.classList.contains(timeArrastada)) {
-                        alert("Você não pode mover para uma casa ocupada por sua própria peça!");
-                        return;
-                    } else {
-                        // Se for do time inimigo, remove ela (Captura!)
-                        console.log(`Peça inimiga ${pecaExistente.id} foi capturada!`);
-                        pecaExistente.remove();
-                    }
+                if (!cartaSelecionada) {
+                    status('⚠ Clique em uma das suas cartas antes de mover uma peça.', 'erro');
+                    return;
                 }
-
-                // Move o elemento HTML da peça para dentro do novo quadrado clicado
-                quadrado.appendChild(pecaArrastada);
-                
-                console.log(`Peça movida para a casa do Cubo: Linha ${quadrado.dataset.linhaCubo}, Coluna ${quadrado.dataset.colunaCubo}`);
+                enviar(`MOVE|${eu}|${cartaSelecionada}|${lo}|${co}|${ld}|${cd}`);
             });
         }
+
+        // ==========================================
+        //    MENSAGENS NA TELA
+        // ==========================================
+        function status(texto, classe) {
+            elStatus.textContent = texto;
+            elStatus.className = classe || '';
+        }
+
+        function registrar(texto, classe) {
+            const d = document.createElement('div');
+            d.className = classe || '';
+            d.textContent = texto;
+            elLog.prepend(d);
+            while (elLog.children.length > 14) elLog.removeChild(elLog.lastChild);
+        }
+
+        const motivos = {
+            MESTRE_CAPTURADO: 'O Mestre foi capturado.',
+            TEMPLO: 'Um Mestre chegou ao templo adversário.',
+            DESCONEXAO: 'O adversário desconectou.'
+        };
+
+        function mostrarFim(titulo, motivo) {
+            document.getElementById('fim-texto').innerHTML =
+                `${titulo}<div style="font-size:1rem;margin-top:8px">${motivos[motivo] || motivo || ''}</div>`;
+            document.getElementById('fim').style.display = 'flex';
+            status(titulo, vez === eu ? '' : '');
+        }
+
+        function esconderFim() {
+            document.getElementById('fim').style.display = 'none';
+        }
+
+        document.getElementById('fim-botao').onclick = () => {
+            esconderFim();
+            enviar(`RESTART|${eu}`);
+        };
     </script>
 </body>
 </html>
