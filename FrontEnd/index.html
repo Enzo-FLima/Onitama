@@ -375,7 +375,11 @@
             : `ws://${host}:8080`;
         const socket = new WebSocket(params.get('server') || urlPadrao);
 
-        socket.onopen = () => registrar('Conectado ao servidor.', 'rec');
+        socket.onopen = () => {
+            registrar('Conectado ao servidor.', 'rec');
+            // keep-alive: proxies (ex.: Render) fecham conexões ociosas
+            setInterval(() => { if (socket.readyState === WebSocket.OPEN) socket.send('PING'); }, 25000);
+        };
         socket.onclose = () => status('Conexão com o servidor perdida.', 'erro');
         socket.onerror = () => status('Não foi possível conectar ao servidor (porta 8080).', 'erro');
         socket.onmessage = (event) => tratarMensagem(event.data);

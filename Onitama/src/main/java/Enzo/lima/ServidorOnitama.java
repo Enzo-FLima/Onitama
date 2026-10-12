@@ -113,6 +113,7 @@ public class ServidorOnitama extends WebSocketServer {
                 switch (c[0]) {
                     case Protocolo.MOVE -> tratarMove(conn, n, c);
                     case Protocolo.RESTART -> tratarRestart(conn, n);
+                    case Protocolo.PING -> { } // keep-alive: evita que proxies derrubem conexões ociosas
                     default -> enviar(conn, Protocolo.msg(Protocolo.ERROR, "COMANDO_DESCONHECIDO", "Comando inválido: " + c[0]));
                 }
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {

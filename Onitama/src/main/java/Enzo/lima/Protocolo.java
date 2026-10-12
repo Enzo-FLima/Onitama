@@ -15,6 +15,8 @@ public final class Protocolo {
     public static final String MOVE = "MOVE";
     /** RESTART|jogador  (nova partida, só após o fim) */
     public static final String RESTART = "RESTART";
+    /** PING  - keep-alive periódico enviado pelo cliente (o servidor ignora) */
+    public static final String PING = "PING";
 
     // ---- Servidor -> Cliente ----
     /** CONNECT|jogador  - identifica o jogador dono da conexão */
