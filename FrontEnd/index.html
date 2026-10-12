@@ -367,7 +367,13 @@
         // ==========================================
         const params = new URLSearchParams(location.search);
         const host = location.hostname || 'localhost';
-        const socket = new WebSocket(params.get('server') || `ws://${host}:8080`);
+        // Servida por proxy na porta padrão 80/443 (VPS/Docker): usa /ws (wss se a página for https).
+        // Arquivo local ou outra porta (ex.: python -m http.server 8000): conecta direto na 8080.
+        const viaProxy = location.protocol !== 'file:' && location.port === '';
+        const urlPadrao = viaProxy
+            ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
+            : `ws://${host}:8080`;
+        const socket = new WebSocket(params.get('server') || urlPadrao);
 
         socket.onopen = () => registrar('Conectado ao servidor.', 'rec');
         socket.onclose = () => status('Conexão com o servidor perdida.', 'erro');

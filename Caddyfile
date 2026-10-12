@@ -1,0 +1,7 @@
+{$SITE_ADDRESS} {
+	root * /srv
+	file_server
+	# WebSocket do jogo (Caddy trata o upgrade automaticamente)
+	reverse_proxy /ws backend:8080
+}
+

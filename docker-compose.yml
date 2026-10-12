@@ -1,0 +1,26 @@
+services:
+  # Servidor do jogo (WebSocket). Não é exposto ao mundo: só o proxy fala com ele.
+  backend:
+    build: ./Onitama
+    restart: unless-stopped
+
+  # Proxy: serve o front-end e encaminha /ws para o backend.
+  # Com SITE_ADDRESS=meudominio.com ele emite o certificado HTTPS sozinho.
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./FrontEnd:/srv:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+
+volumes:
+  caddy_data:
+
