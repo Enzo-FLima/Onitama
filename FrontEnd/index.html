@@ -9,7 +9,7 @@
             margin: 0;
             padding: 20px;
             /* Substitua o caminho abaixo pela sua imagem de fundo geral */
-            background-image: url('Assets/fundo_Onitama.png'); 
+            background-image: url('Assets/fundo_onitama.png'); 
             background-size: cover;       /* Faz a imagem cobrir a tela inteira sem distorcer */
             background-position: center;  /* Centraliza a imagem na tela */
             background-repeat: no-repeat; /* Impede que a imagem fique se repetindo em mosaico */
@@ -367,12 +367,13 @@
         // ==========================================
         const params = new URLSearchParams(location.search);
         const host = location.hostname || 'localhost';
-        // Servida por proxy na porta padrão 80/443 (VPS/Docker): usa /ws (wss se a página for https).
-        // Arquivo local ou outra porta (ex.: python -m http.server 8000): conecta direto na 8080.
+        // Servida por proxy na porta padrão 80/443 (VPS/Render): usa /ws (wss se a página for https).
+        // Porta 8080 (Docker local), arquivo local (file://) ou outra porta: conecta em ws://host:8080/ws
+        // (tanto o Caddy quanto o Spring Boot aceitam o caminho /ws).
         const viaProxy = location.protocol !== 'file:' && location.port === '';
         const urlPadrao = viaProxy
             ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
-            : `ws://${host}:8080`;
+            : `ws://${host}:8080/ws`;
         const socket = new WebSocket(params.get('server') || urlPadrao);
 
         socket.onopen = () => {
