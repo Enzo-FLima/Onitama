@@ -1,9 +1,9 @@
-package Enzo.lima;
+package Enzo.lima.model;
 
 import java.util.List;
 
 /**
- * Carta de movimento do Onitama.
+ * MODEL - Carta de movimento do Onitama.
  *
  * Os movimentos são pares {dLinha, dColuna} vistos da perspectiva do DONO da carta:
  * dLinha = -1 significa "para frente". Para o jogador 2 (que joga de cima para baixo)

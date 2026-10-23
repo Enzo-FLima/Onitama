@@ -16,26 +16,29 @@ O jogador 1 (azul) começa. Ambos veem as suas peças embaixo (o jogador 2 vê o
 ## 2. Arquitetura e comunicação entre processos
 
 ```text
- CLIENTE 1 (navegador)          SERVIDOR (processo Java)          CLIENTE 2 (navegador)
-  index.html + JS    <-- socket -->  ServidorOnitama  <-- socket -->   index.html + JS
-                                      │  EstadoDoJogo (memória única)
-                                      │  Mutex (ReentrantLock)
+ CLIENTE 1 (navegador)          SERVIDOR (Spring Boot)            CLIENTE 2 (navegador)
+  index.html + JS    <-- socket -->  OnitamaController <-- socket -->  index.html + JS
+                                      │  PartidaService (mutex, vagas, turno)
+                                      │  EstadoDoJogo (memória única) / MensagemView
 ```
 
-* Canal: **WebSocket** (socket TCP) na porta **8080** – biblioteca `Java-WebSocket`.
+* Canal: **WebSocket** (socket TCP) na porta **8080** – Spring WebSocket (Tomcat embutido), endpoints `/` e `/ws`.
 * O servidor é a **única autoridade**: valida a jogada, altera o estado e envia mensagens. O cliente só
   envia `MOVE` e desenha o `STATE` recebido, por isso os dois nunca ficam dessincronizados.
 * São 3 processos independentes (servidor + 2 navegadores), que só se comunicam por mensagens.
 
-Arquivos:
+O backend segue o padrão **MVC** (o front-end continua sendo um único `index.html` estático):
 
-| Arquivo | Papel |
-|---|---|
-| `Onitama/src/main/java/Enzo/lima/ServidorOnitama.java` | Sockets, mutex, vagas de jogador, controle de turno, desconexão |
-| `.../EstadoDoJogo.java` | Estado central da partida (memória) e regras/validação |
-| `.../Carta.java` | Catálogo imutável das 26 cartas e seus movimentos |
-| `.../Protocolo.java` | Constantes da notação de mensagens |
-| `FrontEnd/index.html` | Interface e cliente (JS) |
+| Camada | Arquivo (`Onitama/src/main/java/Enzo/lima/...`) | Papel |
+|---|---|---|
+| Model | `model/EstadoDoJogo.java` | Estado central da partida (memória) e regras/validação |
+| Model | `model/Carta.java` | Catálogo imutável das 26 cartas e seus movimentos |
+| View | `view/MensagemView.java` | Converte o model nas mensagens do protocolo (inclusive `STATE`) |
+| View | `view/Protocolo.java` | Constantes da notação de mensagens |
+| Controller | `controller/OnitamaController.java` | Recebe conexões/mensagens WebSocket, interpreta o comando e delega |
+| Service | `service/PartidaService.java` | Mutex, vagas de jogador, controle de turno, desconexão, reinício |
+| Config | `config/WebSocketConfig.java`, `OnitamaApplication.java` | Registro do endpoint e inicialização do Spring Boot |
+| – | `FrontEnd/index.html` | Interface e cliente (JS) |
 
 ## 3. Protocolo de mensagens (notação própria)
 Formato: `CODIGO|campo|campo|...` (separador `|`). Coordenadas: `linha` e `coluna` de 0 a 4 **no tabuleiro
@@ -86,7 +89,8 @@ O estado vive em **uma única instância** de `EstadoDoJogo` (no servidor):
 Os clientes **não guardam estado próprio da partida**: só o último `STATE` recebido para desenhar.
 
 ## 5. Exclusão mútua
-`ReentrantLock mutex` em `ServidorOnitama`. A biblioteca chama `onOpen`/`onMessage`/`onClose` em threads
+`ReentrantLock mutex` em `PartidaService` (bean singleton do Spring). O Spring chama o `OnitamaController`
+(`afterConnectionEstablished`/`handleTextMessage`/`afterConnectionClosed`) em threads
 diferentes; sem proteção, dois `MOVE` simultâneos poderiam alterar tabuleiro, cartas e `vez` ao mesmo tempo.
 Região crítica (protege tabuleiro, mãos, reserva, `vez`, `fase` e a tabela de jogadores conectados):
 ```text
@@ -96,16 +100,19 @@ Enviar dentro do lock evita que mensagens de jogadas diferentes se misturem. Tes
 dois `MOVE` simultâneos: apenas um é aceito, o outro recebe `ERROR`.
 
 ## 6. Tratamento de desconexão
-`onClose` libera a vaga; se havia adversário ele recebe `OPPONENT_LEFT` e, se a partida estava em andamento,
+`afterConnectionClosed` → `PartidaService.desconectar` libera a vaga; se havia adversário ele recebe `OPPONENT_LEFT` e, se a partida estava em andamento,
 `WIN|n|DESCONEXAO`; o estado é reiniciado e ele volta a `WAIT`. Um novo jogador pode entrar na vaga livre
 e a partida recomeça. Um 3º jogador recebe `ERROR|SALA_CHEIA`. Falhas de envio são capturadas.
 
 ## 7. Como executar
-Requisitos: Java 21 (e Maven, ou IntelliJ).
+Requisitos: apenas **Java 21**. O Maven não precisa estar instalado: o projeto traz o **Maven Wrapper**
+(`mvnw` / `mvnw.cmd`), que baixa a versão certa do Maven sozinho na primeira execução.
 1. **Servidor** – uma das opções:
-   * IntelliJ: abrir `Onitama/` e executar `ServidorOnitama.main`;
-   * Terminal: `cd Onitama` → `mvn compile exec:java`.
-   Deve aparecer `Servidor Onitama ligado! ... porta 8080`.
+   * IntelliJ: abrir `Onitama/` e executar `OnitamaApplication.main`;
+   * Terminal (Windows): `cd Onitama` → `.\mvnw.cmd spring-boot:run`
+   * Terminal (Linux/macOS): `cd Onitama` → `./mvnw spring-boot:run`
+   * Jar: `.\mvnw.cmd package` → `java -jar target/onitama.jar` (outra porta: `--server.port=9090`).
+   Deve aparecer `Tomcat started on port 8080`. Testes automáticos: `.\mvnw.cmd test`.
 2. **Jogadores** – abrir `FrontEnd/index.html` em **duas janelas/abas** do navegador (a 1ª conectada é o
    jogador 1 azul, a 2ª o jogador 2 vermelho). Em outro computador da rede:
    `index.html?server=ws://IP_DO_SERVIDOR:8080`.
@@ -116,11 +123,11 @@ Requisitos: Java 21 (e Maven, ou IntelliJ).
 | Requisito | Onde |
 |---|---|
 | ≥ 2 usuários / comunicação real entre processos | 2 navegadores + servidor via WebSocket |
-| Sockets | `ServidorOnitama` (WebSocketServer) e `WebSocket` do JS |
-| Notação própria de mensagens | Seção 3, `Protocolo.java` |
+| Sockets | `OnitamaController` (Spring WebSocket) e `WebSocket` do JS |
+| Notação própria de mensagens | Seção 3, `Protocolo.java` / `MensagemView.java` |
 | Controle da vez por mensagens | `vez` no servidor, `TURN`, `ERROR|NAO_E_SUA_VEZ` |
 | Gerenciamento de memória | Seção 4, comentários em `EstadoDoJogo` |
-| Exclusão mútua | Seção 5, `mutex` em `ServidorOnitama` |
+| Exclusão mútua | Seção 5, `mutex` em `PartidaService` |
 | Validação das jogadas, captura, vitória | `EstadoDoJogo.jogar` |
 | Sincronização | `STATE` após cada jogada |
 | Desconexão | Seção 6 |

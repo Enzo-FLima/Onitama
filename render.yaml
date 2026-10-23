@@ -2,7 +2,7 @@ services:
   - type: web
     name: onitama
     runtime: docker
-    dockerfilePath: ./Dockerfile.render
+    dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /
 

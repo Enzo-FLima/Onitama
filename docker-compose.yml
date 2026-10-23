@@ -12,7 +12,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "8080:8080"
       - "443:443"
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}

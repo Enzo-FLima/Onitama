@@ -1,9 +1,10 @@
-package Enzo.lima;
+package Enzo.lima.view;
 
 /**
- * Notação própria das mensagens trocadas entre servidor e clientes.
+ * VIEW - Notação própria das mensagens trocadas entre servidor e clientes.
  * Formato de texto: CODIGO|campo1|campo2|...   (separador = '|').
  * A documentação completa de cada mensagem está no README.md.
+ * As mensagens são montadas por {@link MensagemView}.
  */
 public final class Protocolo {
     private Protocolo() {}

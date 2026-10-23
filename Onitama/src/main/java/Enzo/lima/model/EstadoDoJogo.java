@@ -1,11 +1,12 @@
-package Enzo.lima;
+package Enzo.lima.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * ESTADO CENTRAL DA PARTIDA (a "memória" do jogo) + REGRAS DO ONITAMA.
+ * MODEL - ESTADO CENTRAL DA PARTIDA (a "memória" do jogo) + REGRAS DO ONITAMA.
+ * Não conhece WebSocket nem o formato das mensagens (isso é papel do controller e da view).
  *
  * <pre>
  * EstadoDoJogo
@@ -23,7 +24,7 @@ import java.util.List;
  *  - ATUALIZADA: {@link #jogar} altera o tabuleiro/mãos/vez EM LUGAR (in-place). As cartas são
  *                apenas referências para o catálogo imutável {@link Carta#TODAS}.
  *  - COMPARTILHADA: o estado é compartilhado pelas threads do servidor (uma por conexão). A classe NÃO
- *                é thread-safe por si só: o {@link ServidorOnitama} protege TODO acesso com um
+ *                é thread-safe por si só: o {@code PartidaService} protege TODO acesso com um
  *                ReentrantLock (exclusão mútua).
  *  - LIBERADA  : {@link #reiniciar()} reaproveita os mesmos arrays (sem realocar) e zera as referências
  *                antigas; ao encerrar o servidor o coletor de lixo da JVM libera o objeto inteiro.
@@ -166,22 +167,15 @@ public class EstadoDoJogo {
     public int getVez() { return vez; }
     public Fase getFase() { return fase; }
     public int getVencedor() { return vencedor; }
+    public String getMotivoFim() { return motivoFim; }
 
-    /**
-     * Foto do estado para sincronizar os clientes (formato do protocolo):
-     * STATE|vez|fase|mao1a,mao1b|mao2a,mao2b|reserva|25 casas (linha a linha)
-     */
-    public String serializar() {
-        StringBuilder tab = new StringBuilder(25);
-        for (char[] linha : tabuleiro) tab.append(linha);
-        return Protocolo.STATE + "|" + vez + "|" + fase + "|"
-                + id(maos[1][0]) + "," + id(maos[1][1]) + "|"
-                + id(maos[2][0]) + "," + id(maos[2][1]) + "|"
-                + id(reserva) + "|" + tab;
-    }
+    /** Peça na casa (linha, coluna): '.' vazio, 'a'/'A' jogador 1, 'b'/'B' jogador 2. */
+    public char getPeca(int linha, int coluna) { return tabuleiro[linha][coluna]; }
 
-    private static String id(Carta c) {
-        return c == null ? "-" : c.id();
-    }
+    /** Carta {@code slot} (0 ou 1) da mão do jogador (1 ou 2); null se a partida não começou. */
+    public Carta getCarta(int jogador, int slot) { return maos[jogador][slot]; }
+
+    public Carta getReserva() { return reserva; }
 }
+
 
