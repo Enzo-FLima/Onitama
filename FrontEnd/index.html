@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 12px;
             /* Substitua o caminho abaixo pela sua imagem de fundo geral */
             background-image: url('Assets/fundo_onitama.png'); 
             background-size: cover;       /* Faz a imagem cobrir a tela inteira sem distorcer */
@@ -17,19 +17,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
 
         .tabuleiro-container {
             position: relative;
-            width: 100%;
-            max-width: 1000px;
+            container-type: inline-size;
+            /* Garante que o tabuleiro + cartas externas (topo/baixo/laterais) caibam tanto na largura quanto na altura */
+            width: min(1000px, 76vw, calc((100dvh - 32px) * 1.20));
             /* A imagem fornecida tem a proporção exata de 1.83 (Largura / Altura) */
             aspect-ratio: 1000 / 546; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin: 0 auto;
+            margin: auto;
         }
 
         .imagem-fundo {
@@ -158,13 +161,20 @@
             justify-content: center;
             align-items: center;
             font-weight: bold;
-            font-size: 1.15rem;
+            font-size: clamp(0.5rem, 1.8cqw, 1.15rem);
             color: white;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
             user-select: none;
+            touch-action: manipulation;
             z-index: 3;
-            transition: filter 0.15s ease, box-shadow 0.15s ease;
+            transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        .peca.selecionada-peca {
+            outline: clamp(2px, 0.4cqw, 4px) solid #00e676;
+            box-shadow: 0 0 14px #00e676;
+            transform: scale(1.06);
         }
 
         .peca:hover {
@@ -179,7 +189,7 @@
         /* Peças do Jogador Azul */
         .peca.azul { 
             background: radial-gradient(circle at 35% 35%, #42a5f5, #1976d2); 
-            border: 2px solid #0d47a1; 
+            border: clamp(1px, 0.25cqw, 2px) solid #0d47a1; 
         }
 
         .peca.azul.mestre { 
@@ -188,9 +198,9 @@
             max-height: 96%;
             border-radius: 50%;
             background: radial-gradient(circle at 35% 35%, #1e88e5, #0d47a1); 
-            border: 3px solid #ffd700;
+            border: clamp(1.5px, 0.35cqw, 3px) solid #ffd700;
             box-shadow: 0 0 12px rgba(255, 215, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.4);
-            font-size: 0.72rem;
+            font-size: clamp(0.35rem, 1.15cqw, 0.72rem);
             font-weight: 800;
             letter-spacing: 0.5px;
         }  
@@ -198,7 +208,7 @@
         /* Peças do Jogador Vermelho */
         .peca.vermelho { 
             background: radial-gradient(circle at 35% 35%, #ef5350, #d32f2f); 
-            border: 2px solid #b71c1c; 
+            border: clamp(1px, 0.25cqw, 2px) solid #b71c1c; 
         }
 
         .peca.vermelho.mestre { 
@@ -207,9 +217,9 @@
             max-height: 96%;
             border-radius: 50%;
             background: radial-gradient(circle at 35% 35%, #e53935, #b71c1c); 
-            border: 3px solid #ffd700;
+            border: clamp(1.5px, 0.35cqw, 3px) solid #ffd700;
             box-shadow: 0 0 12px rgba(255, 215, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.4);
-            font-size: 0.72rem;
+            font-size: clamp(0.35rem, 1.15cqw, 0.72rem);
             font-weight: 800;
             letter-spacing: 0.5px;
         }
@@ -219,9 +229,9 @@
             position: fixed;
             top: 8px;
             left: 8px;
-            width: 270px;
+            width: clamp(180px, 24vw, 270px);
             z-index: 10;
-            font-size: 0.8rem;
+            font-size: clamp(0.68rem, 1.2vw, 0.8rem);
             color: #fff;
             pointer-events: none;
         }
@@ -241,17 +251,20 @@
             padding: 6px 8px;
             border-radius: 4px;
             font-family: Consolas, monospace;
-            font-size: 0.68rem;
-            max-height: 230px;
+            font-size: clamp(0.58rem, 1vw, 0.68rem);
+            max-height: 28dvh;
             overflow: hidden;
             word-break: break-all;
         }
         #log div.env { color: #ffd54f; }
         #log div.rec { color: #aed581; }
+        .zona-carta {
+            font-size: clamp(0.45rem, 1.2cqw, 0.75rem);
+        }
         .zona-carta.minha { cursor: pointer; }
         .zona-carta.minha:hover { filter: brightness(1.15); }
         .zona-carta.selecionada {
-            outline: 4px solid #ffd700;
+            outline: clamp(2px, 0.45cqw, 4px) solid #ffd700;
             box-shadow: 0 0 14px #ffd700;
         }
         #fim {
@@ -265,11 +278,88 @@
             justify-content: center;
             align-items: center;
             gap: 16px;
-            font-size: 2rem;
+            padding: 16px;
+            font-size: clamp(1.3rem, 4vw, 2rem);
             font-weight: bold;
             text-align: center;
         }
-        #fim button { font-size: 1.1rem; padding: 10px 24px; cursor: pointer; }
+        #fim button { font-size: clamp(0.95rem, 2.5vw, 1.1rem); padding: 10px 24px; cursor: pointer; }
+
+        /* --- Ajustes Responsivos para Telas Menores e Celulares --- */
+        @media (max-width: 900px) {
+            #painel {
+                top: 6px;
+                left: 6px;
+                width: clamp(150px, 28vw, 220px);
+            }
+            #log {
+                max-height: 110px;
+            }
+        }
+
+        @media (max-width: 640px) and (orientation: portrait) {
+            body {
+                padding: 8px;
+                padding-top: 56px;
+            }
+            .tabuleiro-container {
+                width: min(96vw, calc((100dvh - 90px) * 1.15));
+            }
+            /* Em celulares na vertical, aproxima o baralho e a carta reserva das bordas do tabuleiro */
+            .carta-lateral {
+                right: 1.5%;
+                width: 24%;
+                height: 22%;
+            }
+            .baralho-deck {
+                left: 1.5%;
+                width: 24%;
+                height: 22%;
+            }
+            .carta-topo-1, .carta-baixo-1 {
+                left: 24%;
+                width: 24%;
+                height: 23%;
+            }
+            .carta-topo-2, .carta-baixo-2 {
+                left: 52%;
+                width: 24%;
+                height: 23%;
+            }
+            #painel {
+                top: 6px;
+                left: 6px;
+                right: 6px;
+                width: auto;
+                display: flex;
+                gap: 6px;
+                align-items: flex-start;
+            }
+            #status {
+                flex: 1;
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
+            #log {
+                margin-top: 0;
+                width: 38%;
+                max-height: 44px;
+                font-size: 0.55rem;
+                padding: 4px 6px;
+            }
+        }
+
+        @media (max-height: 540px) and (orientation: landscape) {
+            .tabuleiro-container {
+                width: min(74vw, calc((100dvh - 16px) * 1.18));
+            }
+            #painel {
+                width: clamp(140px, 22vw, 200px);
+            }
+            #log {
+                max-height: 70px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -354,6 +444,7 @@
         let eu = 0;                    // número do jogador desta janela (1 = azul, 2 = vermelho)
         let vez = 0;                   // quem joga agora, segundo o servidor
         let cartaSelecionada = null;   // id da carta escolhida para a próxima jogada
+        let pecaSelecionada = null;    // [linhaServ, colServ] da peça escolhida por toque/clique (mobile/desktop)
         let fase = 'ESPERANDO';
 
         // O jogador 2 enxerga o tabuleiro girado 180° para ter suas peças sempre embaixo.
@@ -459,6 +550,7 @@
             aplicarCarta('carta-reserva', c[5], false);
 
             // Redesenha as peças a partir da matriz do servidor
+            pecaSelecionada = null;
             grade.querySelectorAll('.peca').forEach(p => p.remove());
             const tab = c[6];
             for (let l = 0; l < 5; l++) {
@@ -543,10 +635,34 @@
                 e.dataTransfer.setData('text/plain', `${linhaServ},${colServ}`);
             });
 
+            if (minha) {
+                peca.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    grade.querySelectorAll('.peca.selecionada-peca').forEach(p => p.classList.remove('selecionada-peca'));
+                    if (pecaSelecionada && pecaSelecionada[0] === linhaServ && pecaSelecionada[1] === colServ) {
+                        pecaSelecionada = null;
+                        return;
+                    }
+                    pecaSelecionada = [linhaServ, colServ];
+                    peca.classList.add('selecionada-peca');
+                });
+            }
+
             document.getElementById(idQuadradoAlvo).appendChild(peca);
         }
 
-        // Soltar a peça apenas ENVIA o pedido de jogada; quem move de fato é o servidor.
+        function tentarMover(lo, co, ld, cd) {
+            if (lo === ld && co === cd) return;
+            if (!cartaSelecionada) {
+                status('⚠ Clique em uma das suas cartas antes de mover uma peça.', 'erro');
+                return;
+            }
+            pecaSelecionada = null;
+            grade.querySelectorAll('.peca.selecionada-peca').forEach(p => p.classList.remove('selecionada-peca'));
+            enviar(`MOVE|${eu}|${cartaSelecionada}|${lo}|${co}|${ld}|${cd}`);
+        }
+
+        // Soltar a peça (ou tocar na casa de destino) apenas ENVIA o pedido de jogada; quem move de fato é o servidor.
         function configurarZonaDeSoltura(quadrado) {
             quadrado.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -565,13 +681,14 @@
                 if (!origem) return;
                 const [lo, co] = origem.split(',').map(Number);
                 const [ld, cd] = girar(Number(quadrado.dataset.linhaCubo), Number(quadrado.dataset.colunaCubo));
-                if (lo === ld && co === cd) return;
+                tentarMover(lo, co, ld, cd);
+            });
 
-                if (!cartaSelecionada) {
-                    status('⚠ Clique em uma das suas cartas antes de mover uma peça.', 'erro');
-                    return;
-                }
-                enviar(`MOVE|${eu}|${cartaSelecionada}|${lo}|${co}|${ld}|${cd}`);
+            quadrado.addEventListener('click', () => {
+                if (!pecaSelecionada) return;
+                const [lo, co] = pecaSelecionada;
+                const [ld, cd] = girar(Number(quadrado.dataset.linhaCubo), Number(quadrado.dataset.colunaCubo));
+                tentarMover(lo, co, ld, cd);
             });
         }
 
